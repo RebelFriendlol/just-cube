@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>justcube</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #1e1e1e;
+      font-family: Arial, sans-serif;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    .ui {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 10;
+      width: 320px;
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(24, 24, 24, 0.88);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .ui-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .ui-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #cfcfcf;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 2px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    button,
+    select {
+      padding: 10px 12px;
+      border: none;
+      border-radius: 10px;
+      background: #2d2d2d;
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s ease, transform 0.15s ease;
+    }
+
+    button:hover,
+    select:hover {
+      background: #3f3f3f;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    select {
+      width: 100%;
+      outline: none;
+    }
+
+    .color-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .color-btn {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border: 2px solid rgba(255,255,255,0.9);
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.15);
+    }
+
+    .github-link {
+      position: fixed;
+      left: 16px;
+      bottom: 16px;
+      z-index: 10;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(24, 24, 24, 0.92);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      font-size: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .github-link:hover {
+      background: #444;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="ui">
+    <div class="ui-section">
+      <div class="ui-label" id="langLabel">Język</div>
+      <select id="languageSelect">
+        <option value="pl">Polski</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+
+    <div class="ui-section">
+      <div class="ui-label" id="viewLabel">Widok</div>
+      <div class="row">
+        <button id="resetCamera">Reset kamery</button>
+        <button id="toggleGrid">Ukryj siatkę</button>
+        <button id="toggleGhost">Ghost: OFF</button>
+      </div>
+    </div>
+
+    <div class="ui-section">
+      <div class="ui-label" id="colorLabel">Kolor kostki</div>
+      <div class="color-row">
+        <button class="color-btn" data-color="0x4da6ff" style="background:#4da6ff;" title="Blue"></button>
+        <button class="color-btn" data-color="0xff4d4d" style="background:#ff4d4d;" title="Red"></button>
+        <button class="color-btn" data-color="0x4dff88" style="background:#4dff88;" title="Green"></button>
+        <button class="color-btn" data-color="0xffd24d" style="background:#ffd24d;" title="Yellow"></button>
+        <button class="color-btn" data-color="0xb84dff" style="background:#b84dff;" title="Purple"></button>
+        <button class="color-btn" data-color="0xffffff" style="background:#ffffff;" title="White"></button>
+        <button class="color-btn" data-color="0x222222" style="background:#222222;" title="Black"></button>
+      </div>
+    </div>
+
+    <div class="ui-section">
+      <div class="ui-label" id="appearanceLabel">Wygląd</div>
+      <select id="outlineMode">
+        <option value="thin">Outline: cienki</option>
+        <option value="medium">Outline: średni</option>
+        <option value="thick">Outline: gruby</option>
+      </select>
+
+      <select id="lightMode">
+        <option value="normal">Światło: normalne</option>
+        <option value="strong">Światło: silne</option>
+        <option value="none">Światło: brak</option>
+      </select>
+
+      <select id="shadingMode">
+        <option value="flat">Shading: płaski</option>
+        <option value="smooth">Shading: gładki</option>
+      </select>
+    </div>
+
+    <div class="ui-section">
+      <div class="ui-label" id="presetsLabel">Presety widoku</div>
+      <div class="preset-grid">
+        <button id="view1">3/4</button>
+        <button id="view2">Góra</button>
+        <button id="view3">Bok</button>
+      </div>
+    </div>
+  </div>
+
+  <a
+    class="github-link"
+    href="https://github.com/TWOJE_REPO"
+    target="_blank"
+    rel="noopener noreferrer"
+    title="Repozytorium GitHub"
+  >
+    ⌘
+  </a>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    const translations = {
+      pl: {
+        langLabel: "Język",
+        viewLabel: "Widok",
+        colorLabel: "Kolor kostki",
+        appearanceLabel: "Wygląd",
+        presetsLabel: "Presety widoku",
+        resetCamera: "Reset kamery",
+        hideGrid: "Ukryj siatkę",
+        showGrid: "Pokaż siatkę",
+        ghostOn: "Ghost: ON",
+        ghostOff: "Ghost: OFF",
+        viewTop: "Góra",
+        viewSide: "Bok",
+        outlineThin: "Outline: cienki",
+        outlineMedium: "Outline: średni",
+        outlineThick: "Outline: gruby",
+        lightNormal: "Światło: normalne",
+        lightStrong: "Światło: silne",
+        lightNone: "Światło: brak",
+        shadingFlat: "Shading: płaski",
+        shadingSmooth: "Shading: gładki"
+      },
+      en: {
+        langLabel: "Language",
+        viewLabel: "View",
+        colorLabel: "Cube color",
+        appearanceLabel: "Appearance",
+        presetsLabel: "View presets",
+        resetCamera: "Reset camera",
+        hideGrid: "Hide grid",
+        showGrid: "Show grid",
+        ghostOn: "Ghost: ON",
+        ghostOff: "Ghost: OFF",
+        viewTop: "Top",
+        viewSide: "Side",
+        outlineThin: "Outline: thin",
+        outlineMedium: "Outline: medium",
+        outlineThick: "Outline: thick",
+        lightNormal: "Light: normal",
+        lightStrong: "Light: strong",
+        lightNone: "Light: none",
+        shadingFlat: "Shading: flat",
+        shadingSmooth: "Shading: smooth"
+      }
+    };
+
+    let currentLanguage = "pl";
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1e1e1e);
+
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+
+    const defaultCameraPosition = new THREE.Vector3(2, 2, 3);
+    const defaultTarget = new THREE.Vector3(0, 0, 0);
+    camera.position.copy(defaultCameraPosition);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+    let cubeMaterial = new THREE.MeshStandardMaterial({
+      color: 0x4da6ff,
+      flatShading: true,
+      transparent: true,
+      opacity: 1
+    });
+
+    const cube = new THREE.Mesh(geometry, cubeMaterial);
+    scene.add(cube);
+
+    const edges = new THREE.EdgesGeometry(geometry);
+
+    const outlineThin = new THREE.LineSegments(
+      edges,
+      new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 1 })
+    );
+    outlineThin.scale.set(1.001, 1.001, 1.001);
+    cube.add(outlineThin);
+
+    const outlineMedium = new THREE.LineSegments(
+      edges,
+      new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 1 })
+    );
+    outlineMedium.scale.set(1.008, 1.008, 1.008);
+    cube.add(outlineMedium);
+
+    const outlineThick = new THREE.LineSegments(
+      edges,
+      new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 1 })
+    );
+    outlineThick.scale.set(1.016, 1.016, 1.016);
+    cube.add(outlineThick);
+
+    const outlines = {
+      thin: outlineThin,
+      medium: outlineMedium,
+      thick: outlineThick
+    };
+
+    function setOutlineMode(mode) {
+      outlineThin.visible = false;
+      outlineMedium.visible = false;
+      outlineThick.visible = false;
+      outlines[mode].visible = true;
+    }
+
+    setOutlineMode("thin");
+
+    const light1 = new THREE.DirectionalLight(0xffffff, 1);
+    light1.position.set(3, 3, 3);
+    scene.add(light1);
+
+    const light2 = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(light2);
+
+    const grid = new THREE.GridHelper(10, 10);
+    scene.add(grid);
+
+    const axes = new THREE.AxesHelper(2);
+    scene.add(axes);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.copy(defaultTarget);
+    controls.update();
+
+    const resetButton = document.getElementById("resetCamera");
+    const toggleGridButton = document.getElementById("toggleGrid");
+    const toggleGhostButton = document.getElementById("toggleGhost");
+    const colorButtons = document.querySelectorAll(".color-btn");
+    const outlineModeSelect = document.getElementById("outlineMode");
+    const lightModeSelect = document.getElementById("lightMode");
+    const shadingModeSelect = document.getElementById("shadingMode");
+    const languageSelect = document.getElementById("languageSelect");
+
+    let ghostMode = false;
+
+    const defaultPresets = {
+      1: {
+        position: { x: 2, y: 2, z: 3 },
+        target:   { x: 0, y: 0, z: 0 }
+      },
+      2: {
+        position: { x: 0, y: 5, z: 0.01 },
+        target:   { x: 0, y: 0, z: 0 }
+      },
+      3: {
+        position: { x: 5, y: 0, z: 0.01 },
+        target:   { x: 0, y: 0, z: 0 }
+      }
+    };
+
+    function loadView(slot) {
+      const data = defaultPresets[slot];
+      if (!data) return;
+
+      camera.position.set(
+        data.position.x,
+        data.position.y,
+        data.position.z
+      );
+
+      controls.target.set(
+        data.target.x,
+        data.target.y,
+        data.target.z
+      );
+
+      controls.update();
+    }
+
+    function updateLanguage(lang) {
+      currentLanguage = lang;
+      const t = translations[lang];
+
+      document.documentElement.lang = lang;
+
+      document.getElementById("langLabel").textContent = t.langLabel;
+      document.getElementById("viewLabel").textContent = t.viewLabel;
+      document.getElementById("colorLabel").textContent = t.colorLabel;
+      document.getElementById("appearanceLabel").textContent = t.appearanceLabel;
+      document.getElementById("presetsLabel").textContent = t.presetsLabel;
+
+      resetButton.textContent = t.resetCamera;
+      toggleGridButton.textContent = grid.visible ? t.hideGrid : t.showGrid;
+      toggleGhostButton.textContent = ghostMode ? t.ghostOn : t.ghostOff;
+
+      document.getElementById("view1").textContent = "3/4";
+      document.getElementById("view2").textContent = t.viewTop;
+      document.getElementById("view3").textContent = t.viewSide;
+
+      outlineModeSelect.options[0].text = t.outlineThin;
+      outlineModeSelect.options[1].text = t.outlineMedium;
+      outlineModeSelect.options[2].text = t.outlineThick;
+
+      lightModeSelect.options[0].text = t.lightNormal;
+      lightModeSelect.options[1].text = t.lightStrong;
+      lightModeSelect.options[2].text = t.lightNone;
+
+      shadingModeSelect.options[0].text = t.shadingFlat;
+      shadingModeSelect.options[1].text = t.shadingSmooth;
+    }
+
+    resetButton.addEventListener("click", () => {
+      camera.position.copy(defaultCameraPosition);
+      controls.target.copy(defaultTarget);
+      controls.update();
+    });
+
+    toggleGridButton.addEventListener("click", () => {
+      grid.visible = !grid.visible;
+      toggleGridButton.textContent = grid.visible
+        ? translations[currentLanguage].hideGrid
+        : translations[currentLanguage].showGrid;
+    });
+
+    toggleGhostButton.addEventListener("click", () => {
+      ghostMode = !ghostMode;
+      cube.material.opacity = ghostMode ? 0.35 : 1.0;
+
+      Object.values(outlines).forEach(outline => {
+        outline.material.opacity = ghostMode ? 0.8 : 1.0;
+      });
+
+      toggleGhostButton.textContent = ghostMode
+        ? translations[currentLanguage].ghostOn
+        : translations[currentLanguage].ghostOff;
+    });
+
+    colorButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        const colorValue = Number(button.dataset.color);
+        cube.material.color.setHex(colorValue);
+      });
+    });
+
+    outlineModeSelect.addEventListener("change", (e) => {
+      setOutlineMode(e.target.value);
+    });
+
+    lightModeSelect.addEventListener("change", (e) => {
+      const mode = e.target.value;
+
+      if (mode === "normal") {
+        light1.intensity = 1;
+        light2.intensity = 0.6;
+      } else if (mode === "strong") {
+        light1.intensity = 2.2;
+        light2.intensity = 1.0;
+      } else if (mode === "none") {
+        light1.intensity = 0;
+        light2.intensity = 0;
+      }
+    });
+
+    shadingModeSelect.addEventListener("change", (e) => {
+      const currentColor = cube.material.color.getHex();
+      const currentOpacity = cube.material.opacity;
+
+      if (e.target.value === "flat") {
+        cube.material.dispose();
+        cube.material = new THREE.MeshStandardMaterial({
+          color: currentColor,
+          flatShading: true,
+          transparent: true,
+          opacity: currentOpacity
+        });
+      } else {
+        cube.material.dispose();
+        cube.material = new THREE.MeshStandardMaterial({
+          color: currentColor,
+          flatShading: false,
+          transparent: true,
+          opacity: currentOpacity
+        });
+      }
+    });
+
+    languageSelect.addEventListener("change", (e) => {
+      updateLanguage(e.target.value);
+    });
+
+    document.getElementById("view1").addEventListener("click", () => loadView(1));
+    document.getElementById("view2").addEventListener("click", () => loadView(2));
+    document.getElementById("view3").addEventListener("click", () => loadView(3));
+
+    updateLanguage("pl");
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
