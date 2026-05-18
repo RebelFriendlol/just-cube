@@ -55,7 +55,7 @@
 
     .preset-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr); /* Zmieniono z 3 na 2 kolumny dla lepszego układu z 4 przyciskami */
       gap: 8px;
     }
 
@@ -183,6 +183,7 @@
         <button id="view1">3/4</button>
         <button id="view2">Góra</button>
         <button id="view3">Bok</button>
+        <button id="viewRandom">Losowy kąt</button>
       </div>
     </div>
   </div>
@@ -215,6 +216,7 @@
         ghostOff: "Ghost: OFF",
         viewTop: "Góra",
         viewSide: "Bok",
+        viewRandom: "Losowy kąt",
         outlineThin: "Outline: cienki",
         outlineMedium: "Outline: średni",
         outlineThick: "Outline: gruby",
@@ -237,6 +239,7 @@
         ghostOff: "Ghost: OFF",
         viewTop: "Top",
         viewSide: "Side",
+        viewRandom: "Random angle",
         outlineThin: "Outline: thin",
         outlineMedium: "Outline: medium",
         outlineThick: "Outline: thick",
@@ -344,6 +347,7 @@
     const lightModeSelect = document.getElementById("lightMode");
     const shadingModeSelect = document.getElementById("shadingMode");
     const languageSelect = document.getElementById("languageSelect");
+    const viewRandomButton = document.getElementById("viewRandom");
 
     let ghostMode = false;
 
@@ -381,6 +385,24 @@
       controls.update();
     }
 
+    // Funkcja generująca całkowicie losowy kąt kamery wokół punktu (0,0,0)
+    function setRandomAngle() {
+      const radius = 4.12; // Stała odległość od środka sceny (odpowiednik wektora [2,2,3])
+      
+      // Losujemy sferyczne współrzędne (phi i theta)
+      const theta = Math.random() * Math.PI * 2; // Obrót poziomy wokół osi Y (0 do 360 stopni)
+      const phi = Math.acos((Math.random() * 2) - 1); // Obrót pionowy (0 do 180 stopni)
+
+      // Przeliczenie współrzędnych sferycznych na kartezjańskie (X, Y, Z)
+      const x = radius * Math.sin(phi) * Math.sin(theta);
+      const y = radius * Math.cos(phi);
+      const z = radius * Math.sin(phi) * Math.cos(theta);
+
+      camera.position.set(x, y, z);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
+
     function updateLanguage(lang) {
       currentLanguage = lang;
       const t = translations[lang];
@@ -400,6 +422,7 @@
       document.getElementById("view1").textContent = "3/4";
       document.getElementById("view2").textContent = t.viewTop;
       document.getElementById("view3").textContent = t.viewSide;
+      viewRandomButton.textContent = t.viewRandom;
 
       outlineModeSelect.options[0].text = t.outlineThin;
       outlineModeSelect.options[1].text = t.outlineMedium;
@@ -495,6 +518,7 @@
     document.getElementById("view1").addEventListener("click", () => loadView(1));
     document.getElementById("view2").addEventListener("click", () => loadView(2));
     document.getElementById("view3").addEventListener("click", () => loadView(3));
+    viewRandomButton.addEventListener("click", setRandomAngle);
 
     updateLanguage("pl");
 
