@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>justcube</title>
+  <title>JustShape</title>
   <style>
     body {
       margin: 0;
@@ -131,7 +131,19 @@
       <div class="ui-label" id="langLabel">Język</div>
       <select id="languageSelect">
         <option value="pl">Polski</option>
-        <option value="en">English</option>
+        <option value="en" selected>English</option>
+      </select>
+    </div>
+
+    <div class="ui-section">
+      <div class="ui-label" id="shapeLabel">Shape</div>
+      <select id="shapeMode">
+        <option value="cube">Cube</option>
+        <option value="sphere">Sphere</option>
+        <option value="cone">Cone</option>
+        <option value="cylinder">Cylinder</option>
+        <option value="torus">Torus</option>
+        <option value="pyramid">Pyramid</option>
       </select>
     </div>
 
@@ -206,7 +218,8 @@
       pl: {
         langLabel: "Język",
         viewLabel: "Widok",
-        colorLabel: "Kolor kostki",
+        shapeLabel: "Figura",
+        colorLabel: "Kolor figury",
         appearanceLabel: "Wygląd",
         presetsLabel: "Presety widoku",
         resetCamera: "Reset kamery",
@@ -224,12 +237,19 @@
         lightStrong: "Światło: silne",
         lightNone: "Światło: brak",
         shadingFlat: "Shading: płaski",
-        shadingSmooth: "Shading: gładki"
+        shadingSmooth: "Shading: gładki",
+        shapeCube: "Kostka",
+        shapeSphere: "Kula",
+        shapeCone: "Stożek",
+        shapeCylinder: "Walec",
+        shapeTorus: "Torus",
+        shapePyramid: "Piramida"
       },
       en: {
         langLabel: "Language",
         viewLabel: "View",
-        colorLabel: "Cube color",
+        shapeLabel: "Shape",
+        colorLabel: "Shape color",
         appearanceLabel: "Appearance",
         presetsLabel: "View presets",
         resetCamera: "Reset camera",
@@ -247,7 +267,13 @@
         lightStrong: "Light: strong",
         lightNone: "Light: none",
         shadingFlat: "Shading: flat",
-        shadingSmooth: "Shading: smooth"
+        shadingSmooth: "Shading: smooth",
+        shapeCube: "Cube",
+        shapeSphere: "Sphere",
+        shapeCone: "Cone",
+        shapeCylinder: "Cylinder",
+        shapeTorus: "Torus",
+        shapePyramid: "Pyramid"
       }
     };
 
@@ -271,7 +297,25 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    let geometry = new THREE.BoxGeometry(1, 1, 1);
+
+    function createGeometry(type) {
+      switch (type) {
+        case "sphere":
+          return new THREE.SphereGeometry(0.72, 32, 32);
+        case "cone":
+          return new THREE.ConeGeometry(0.72, 1.45, 32);
+        case "cylinder":
+          return new THREE.CylinderGeometry(0.62, 0.62, 1.45, 32);
+        case "torus":
+          return new THREE.TorusGeometry(0.52, 0.18, 16, 64);
+        case "pyramid":
+          return new THREE.ConeGeometry(0.78, 1.35, 4);
+        case "cube":
+        default:
+          return new THREE.BoxGeometry(1, 1, 1);
+      }
+    }
 
     let cubeMaterial = new THREE.MeshStandardMaterial({
       color: 0x4da6ff,
@@ -347,6 +391,7 @@
     const lightModeSelect = document.getElementById("lightMode");
     const shadingModeSelect = document.getElementById("shadingMode");
     const languageSelect = document.getElementById("languageSelect");
+    const shapeModeSelect = document.getElementById("shapeMode");
     const viewRandomButton = document.getElementById("viewRandom");
 
     let ghostMode = false;
@@ -385,15 +430,15 @@
       controls.update();
     }
 
-    // Funkcja generująca całkowicie losowy kąt kamery wokół punktu (0,0,0)
+  
     function setRandomAngle() {
-      const radius = 4.12; // Stała odległość od środka sceny (odpowiednik wektora [2,2,3])
+      const radius = 4.12; 
       
-      // Losujemy sferyczne współrzędne (phi i theta)
-      const theta = Math.random() * Math.PI * 2; // Obrót poziomy wokół osi Y (0 do 360 stopni)
-      const phi = Math.acos((Math.random() * 2) - 1); // Obrót pionowy (0 do 180 stopni)
+      
+      const theta = Math.random() * Math.PI * 2; 
+      const phi = Math.acos((Math.random() * 2) - 1); 
 
-      // Przeliczenie współrzędnych sferycznych na kartezjańskie (X, Y, Z)
+      
       const x = radius * Math.sin(phi) * Math.sin(theta);
       const y = radius * Math.cos(phi);
       const z = radius * Math.sin(phi) * Math.cos(theta);
@@ -410,6 +455,7 @@
       document.documentElement.lang = lang;
 
       document.getElementById("langLabel").textContent = t.langLabel;
+      document.getElementById("shapeLabel").textContent = t.shapeLabel;
       document.getElementById("viewLabel").textContent = t.viewLabel;
       document.getElementById("colorLabel").textContent = t.colorLabel;
       document.getElementById("appearanceLabel").textContent = t.appearanceLabel;
@@ -434,6 +480,13 @@
 
       shadingModeSelect.options[0].text = t.shadingFlat;
       shadingModeSelect.options[1].text = t.shadingSmooth;
+
+      shapeModeSelect.options[0].text = t.shapeCube;
+      shapeModeSelect.options[1].text = t.shapeSphere;
+      shapeModeSelect.options[2].text = t.shapeCone;
+      shapeModeSelect.options[3].text = t.shapeCylinder;
+      shapeModeSelect.options[4].text = t.shapeTorus;
+      shapeModeSelect.options[5].text = t.shapePyramid;
     }
 
     resetButton.addEventListener("click", () => {
@@ -511,6 +564,22 @@
       }
     });
 
+    shapeModeSelect.addEventListener("change", (e) => {
+      const selectedShape = e.target.value;
+      const newGeometry = createGeometry(selectedShape);
+
+      cube.geometry.dispose();
+      cube.geometry = newGeometry;
+
+      
+      Object.values(outlines).forEach(outline => {
+        outline.geometry.dispose();
+        outline.geometry = new THREE.EdgesGeometry(newGeometry);
+      });
+
+      geometry = newGeometry;
+    });
+
     languageSelect.addEventListener("change", (e) => {
       updateLanguage(e.target.value);
     });
@@ -520,7 +589,8 @@
     document.getElementById("view3").addEventListener("click", () => loadView(3));
     viewRandomButton.addEventListener("click", setRandomAngle);
 
-    updateLanguage("pl");
+    languageSelect.value = "en";
+    updateLanguage("en");
 
     function animate() {
       requestAnimationFrame(animate);
