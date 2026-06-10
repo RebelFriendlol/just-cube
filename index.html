@@ -3,28 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JustShape</title>
+  <title>JustCube</title>
   <style>
+    :root {
+      --panel: rgba(24, 24, 24, 0.9);
+      --button: #2d2d2d;
+      --button-hover: #3f3f3f;
+      --text: #ffffff;
+      --muted: #cfcfcf;
+      --accent: #4da6ff;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
       overflow: hidden;
       background: #1e1e1e;
       font-family: Arial, sans-serif;
+      color: var(--text);
     }
 
-    canvas {
-      display: block;
-    }
+    canvas { display: block; }
 
     .ui {
       position: fixed;
       top: 16px;
       left: 16px;
       z-index: 10;
-      width: 320px;
+      width: 340px;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
       padding: 14px;
       border-radius: 14px;
-      background: rgba(24, 24, 24, 0.88);
+      background: var(--panel);
       backdrop-filter: blur(8px);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
       display: flex;
@@ -36,12 +48,13 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+      padding-bottom: 2px;
     }
 
     .ui-label {
       font-size: 12px;
       font-weight: 700;
-      color: #cfcfcf;
+      color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.08em;
       margin-bottom: 2px;
@@ -53,9 +66,9 @@
       gap: 8px;
     }
 
-    .preset-grid {
+    .grid-2 {
       display: grid;
-      grid-template-columns: repeat(2, 1fr); /* Zmieniono z 3 na 2 kolumny dla lepszego układu z 4 przyciskami */
+      grid-template-columns: repeat(2, 1fr);
       gap: 8px;
     }
 
@@ -64,7 +77,7 @@
       padding: 10px 12px;
       border: none;
       border-radius: 10px;
-      background: #2d2d2d;
+      background: var(--button);
       color: white;
       cursor: pointer;
       font-size: 13px;
@@ -72,13 +85,16 @@
     }
 
     button:hover,
-    select:hover {
-      background: #3f3f3f;
+    select:hover { background: var(--button-hover); }
+    button:active { transform: scale(0.98); }
+
+    button.primary {
+      background: var(--accent);
+      color: #06121f;
+      font-weight: 700;
     }
 
-    button:active {
-      transform: scale(0.98);
-    }
+    button.primary:hover { filter: brightness(1.08); }
 
     select {
       width: 100%;
@@ -98,6 +114,39 @@
       border: 2px solid rgba(255,255,255,0.9);
       border-radius: 50%;
       box-shadow: 0 0 0 2px rgba(0,0,0,0.15);
+    }
+
+    .status {
+      position: fixed;
+      right: 16px;
+      top: 16px;
+      z-index: 10;
+      min-width: 230px;
+      padding: 14px;
+      border-radius: 14px;
+      background: var(--panel);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .timer {
+      font-size: 34px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .task-name {
+      font-size: 15px;
+      color: #f1f1f1;
+      font-weight: 700;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #b8b8b8;
+      line-height: 1.35;
     }
 
     .github-link {
@@ -128,11 +177,29 @@
 <body>
   <div class="ui">
     <div class="ui-section">
-      <div class="ui-label" id="langLabel">Język</div>
+      <div class="ui-label" id="langLabel">Language</div>
       <select id="languageSelect">
-        <option value="pl">Polski</option>
         <option value="en" selected>English</option>
+        <option value="pl">Polski</option>
       </select>
+    </div>
+
+    <div class="ui-section">
+      <div class="ui-label" id="exerciseLabel">Exercise</div>
+      <div class="grid-2">
+        <button class="primary" id="newExercise">New exercise</button>
+        <button id="challengeMode">Challenge: OFF</button>
+      </div>
+      <select id="timerSelect">
+        <option value="30">Timer: 30 sec</option>
+        <option value="60" selected>Timer: 1 min</option>
+        <option value="120">Timer: 2 min</option>
+        <option value="300">Timer: 5 min</option>
+      </select>
+      <div class="grid-2">
+        <button id="startTimer">Start timer</button>
+        <button id="resetTimer">Reset timer</button>
+      </div>
     </div>
 
     <div class="ui-section">
@@ -140,24 +207,32 @@
       <select id="shapeMode">
         <option value="cube">Cube</option>
         <option value="sphere">Sphere</option>
-        <option value="cone">Cone</option>
         <option value="cylinder">Cylinder</option>
+        <option value="cone">Cone</option>
         <option value="torus">Torus</option>
         <option value="pyramid">Pyramid</option>
+        <option value="tetrahedron">Tetrahedron</option>
+        <option value="octahedron">Octahedron</option>
+        <option value="dodecahedron">Dodecahedron</option>
+        <option value="icosahedron">Icosahedron</option>
       </select>
+      <button id="randomShape">Random shape</button>
     </div>
 
     <div class="ui-section">
-      <div class="ui-label" id="viewLabel">Widok</div>
-      <div class="row">
-        <button id="resetCamera">Reset kamery</button>
-        <button id="toggleGrid">Ukryj siatkę</button>
+      <div class="ui-label" id="viewLabel">View</div>
+      <div class="grid-2">
+        <button id="resetCamera">Reset camera</button>
+        <button id="viewRandom">Random angle</button>
+        <button id="toggleGrid">Hide grid</button>
+        <button id="toggleAxes">Hide axes</button>
         <button id="toggleGhost">Ghost: OFF</button>
+        <button id="randomLight">Random light</button>
       </div>
     </div>
 
     <div class="ui-section">
-      <div class="ui-label" id="colorLabel">Kolor kostki</div>
+      <div class="ui-label" id="colorLabel">Shape color</div>
       <div class="color-row">
         <button class="color-btn" data-color="0x4da6ff" style="background:#4da6ff;" title="Blue"></button>
         <button class="color-btn" data-color="0xff4d4d" style="background:#ff4d4d;" title="Red"></button>
@@ -170,96 +245,74 @@
     </div>
 
     <div class="ui-section">
-      <div class="ui-label" id="appearanceLabel">Wygląd</div>
+      <div class="ui-label" id="appearanceLabel">Appearance</div>
       <select id="outlineMode">
-        <option value="thin">Outline: cienki</option>
-        <option value="medium">Outline: średni</option>
-        <option value="thick">Outline: gruby</option>
+        <option value="thin">Outline: thin</option>
+        <option value="medium">Outline: medium</option>
+        <option value="thick">Outline: thick</option>
       </select>
-
       <select id="lightMode">
-        <option value="normal">Światło: normalne</option>
-        <option value="strong">Światło: silne</option>
-        <option value="none">Światło: brak</option>
+        <option value="normal">Light: normal</option>
+        <option value="strong">Light: strong</option>
+        <option value="none">Light: none</option>
       </select>
-
       <select id="shadingMode">
-        <option value="flat">Shading: płaski</option>
-        <option value="smooth">Shading: gładki</option>
+        <option value="flat">Shading: flat</option>
+        <option value="smooth">Shading: smooth</option>
       </select>
     </div>
 
     <div class="ui-section">
-      <div class="ui-label" id="presetsLabel">Presety widoku</div>
-      <div class="preset-grid">
+      <div class="ui-label" id="presetsLabel">View presets</div>
+      <div class="grid-2">
         <button id="view1">3/4</button>
-        <button id="view2">Góra</button>
-        <button id="view3">Bok</button>
-        <button id="viewRandom">Losowy kąt</button>
+        <button id="view2">Top</button>
+        <button id="view3">Side</button>
+        <button id="view4">Front</button>
       </div>
     </div>
   </div>
 
-  <a
-    class="github-link"
-    href="https://github.com/TWOJE_REPO"
-    target="_blank"
-    rel="noopener noreferrer"
-    title="Repozytorium GitHub"
-  >
-    ⌘
-  </a>
+  <div class="status">
+    <div class="timer" id="timerDisplay">01:00</div>
+    <div class="task-name" id="taskName">Cube</div>
+    <div class="hint" id="taskHint">Pick a shape or start a challenge exercise.</div>
+  </div>
+
+  <a class="github-link" href="https://github.com/TWOJE_REPO" target="_blank" rel="noopener noreferrer" title="GitHub repository">⌘</a>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
   <script>
     const translations = {
-      pl: {
-        langLabel: "Język",
-        viewLabel: "Widok",
-        shapeLabel: "Figura",
-        colorLabel: "Kolor figury",
-        appearanceLabel: "Wygląd",
-        presetsLabel: "Presety widoku",
-        resetCamera: "Reset kamery",
-        hideGrid: "Ukryj siatkę",
-        showGrid: "Pokaż siatkę",
-        ghostOn: "Ghost: ON",
-        ghostOff: "Ghost: OFF",
-        viewTop: "Góra",
-        viewSide: "Bok",
-        viewRandom: "Losowy kąt",
-        outlineThin: "Outline: cienki",
-        outlineMedium: "Outline: średni",
-        outlineThick: "Outline: gruby",
-        lightNormal: "Światło: normalne",
-        lightStrong: "Światło: silne",
-        lightNone: "Światło: brak",
-        shadingFlat: "Shading: płaski",
-        shadingSmooth: "Shading: gładki",
-        shapeCube: "Kostka",
-        shapeSphere: "Kula",
-        shapeCone: "Stożek",
-        shapeCylinder: "Walec",
-        shapeTorus: "Torus",
-        shapePyramid: "Piramida"
-      },
       en: {
         langLabel: "Language",
-        viewLabel: "View",
+        exerciseLabel: "Exercise",
         shapeLabel: "Shape",
+        viewLabel: "View",
         colorLabel: "Shape color",
         appearanceLabel: "Appearance",
         presetsLabel: "View presets",
+        newExercise: "New exercise",
+        challengeOn: "Challenge: ON",
+        challengeOff: "Challenge: OFF",
+        startTimer: "Start timer",
+        pauseTimer: "Pause timer",
+        resetTimer: "Reset timer",
+        randomShape: "Random shape",
         resetCamera: "Reset camera",
+        randomAngle: "Random angle",
         hideGrid: "Hide grid",
         showGrid: "Show grid",
+        hideAxes: "Hide axes",
+        showAxes: "Show axes",
         ghostOn: "Ghost: ON",
         ghostOff: "Ghost: OFF",
+        randomLight: "Random light",
         viewTop: "Top",
         viewSide: "Side",
-        viewRandom: "Random angle",
+        viewFront: "Front",
         outlineThin: "Outline: thin",
         outlineMedium: "Outline: medium",
         outlineThick: "Outline: thick",
@@ -268,108 +321,152 @@
         lightNone: "Light: none",
         shadingFlat: "Shading: flat",
         shadingSmooth: "Shading: smooth",
-        shapeCube: "Cube",
-        shapeSphere: "Sphere",
-        shapeCone: "Cone",
-        shapeCylinder: "Cylinder",
-        shapeTorus: "Torus",
-        shapePyramid: "Pyramid"
+        timer30: "Timer: 30 sec",
+        timer60: "Timer: 1 min",
+        timer120: "Timer: 2 min",
+        timer300: "Timer: 5 min",
+        hintNormal: "Pick a shape or start a challenge exercise.",
+        hintChallenge: "Challenge mode is running. Draw fast, then move to the next shape.",
+        timeUp: "Time is up! New challenge loaded.",
+        shapes: {
+          cube: "Cube",
+          sphere: "Sphere",
+          cylinder: "Cylinder",
+          cone: "Cone",
+          torus: "Torus",
+          pyramid: "Pyramid",
+          tetrahedron: "Tetrahedron",
+          octahedron: "Octahedron",
+          dodecahedron: "Dodecahedron",
+          icosahedron: "Icosahedron"
+        }
+      },
+      pl: {
+        langLabel: "Język",
+        exerciseLabel: "Ćwiczenie",
+        shapeLabel: "Bryła",
+        viewLabel: "Widok",
+        colorLabel: "Kolor bryły",
+        appearanceLabel: "Wygląd",
+        presetsLabel: "Presety widoku",
+        newExercise: "Nowe ćwiczenie",
+        challengeOn: "Challenge: ON",
+        challengeOff: "Challenge: OFF",
+        startTimer: "Start timera",
+        pauseTimer: "Pauza timera",
+        resetTimer: "Reset timera",
+        randomShape: "Losuj bryłę",
+        resetCamera: "Reset kamery",
+        randomAngle: "Losowy kąt",
+        hideGrid: "Ukryj siatkę",
+        showGrid: "Pokaż siatkę",
+        hideAxes: "Ukryj osie",
+        showAxes: "Pokaż osie",
+        ghostOn: "Ghost: ON",
+        ghostOff: "Ghost: OFF",
+        randomLight: "Losowe światło",
+        viewTop: "Góra",
+        viewSide: "Bok",
+        viewFront: "Przód",
+        outlineThin: "Outline: cienki",
+        outlineMedium: "Outline: średni",
+        outlineThick: "Outline: gruby",
+        lightNormal: "Światło: normalne",
+        lightStrong: "Światło: silne",
+        lightNone: "Światło: brak",
+        shadingFlat: "Shading: płaski",
+        shadingSmooth: "Shading: gładki",
+        timer30: "Timer: 30 s",
+        timer60: "Timer: 1 min",
+        timer120: "Timer: 2 min",
+        timer300: "Timer: 5 min",
+        hintNormal: "Wybierz bryłę albo rozpocznij ćwiczenie challenge.",
+        hintChallenge: "Tryb challenge działa. Rysuj szybko, potem przejdź do kolejnej bryły.",
+        timeUp: "Czas minął! Wylosowano nowe ćwiczenie.",
+        shapes: {
+          cube: "Kostka",
+          sphere: "Kula",
+          cylinder: "Walec",
+          cone: "Stożek",
+          torus: "Torus",
+          pyramid: "Ostrosłup",
+          tetrahedron: "Czworościan",
+          octahedron: "Ośmiościan",
+          dodecahedron: "Dwunastościan",
+          icosahedron: "Dwudziestościan"
+        }
       }
     };
 
-    let currentLanguage = "pl";
+    let currentLanguage = "en";
+    let currentShape = "cube";
+    let ghostMode = false;
+    let challengeMode = false;
+    let timerRunning = false;
+    let timerInterval = null;
+    let remainingSeconds = 60;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x1e1e1e);
 
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const defaultCameraPosition = new THREE.Vector3(2, 2, 3);
     const defaultTarget = new THREE.Vector3(0, 0, 0);
     camera.position.copy(defaultCameraPosition);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     document.body.appendChild(renderer.domElement);
-
-    let geometry = new THREE.BoxGeometry(1, 1, 1);
 
     function createGeometry(type) {
       switch (type) {
-        case "sphere":
-          return new THREE.SphereGeometry(0.72, 32, 32);
-        case "cone":
-          return new THREE.ConeGeometry(0.72, 1.45, 32);
-        case "cylinder":
-          return new THREE.CylinderGeometry(0.62, 0.62, 1.45, 32);
-        case "torus":
-          return new THREE.TorusGeometry(0.52, 0.18, 16, 64);
-        case "pyramid":
-          return new THREE.ConeGeometry(0.78, 1.35, 4);
-        case "cube":
-        default:
-          return new THREE.BoxGeometry(1, 1, 1);
+        case "cube": return new THREE.BoxGeometry(1, 1, 1);
+        case "sphere": return new THREE.SphereGeometry(0.7, 32, 32);
+        case "cylinder": return new THREE.CylinderGeometry(0.6, 0.6, 1.35, 32);
+        case "cone": return new THREE.ConeGeometry(0.7, 1.4, 32);
+        case "torus": return new THREE.TorusGeometry(0.55, 0.18, 24, 72);
+        case "pyramid": return new THREE.ConeGeometry(0.75, 1.35, 4);
+        case "tetrahedron": return new THREE.TetrahedronGeometry(0.85);
+        case "octahedron": return new THREE.OctahedronGeometry(0.85);
+        case "dodecahedron": return new THREE.DodecahedronGeometry(0.85);
+        case "icosahedron": return new THREE.IcosahedronGeometry(0.85);
+        default: return new THREE.BoxGeometry(1, 1, 1);
       }
     }
 
-    let cubeMaterial = new THREE.MeshStandardMaterial({
-      color: 0x4da6ff,
-      flatShading: true,
-      transparent: true,
-      opacity: 1
-    });
-
-    const cube = new THREE.Mesh(geometry, cubeMaterial);
-    scene.add(cube);
-
-    const edges = new THREE.EdgesGeometry(geometry);
-
-    const outlineThin = new THREE.LineSegments(
-      edges,
-      new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 1 })
-    );
-    outlineThin.scale.set(1.001, 1.001, 1.001);
-    cube.add(outlineThin);
-
-    const outlineMedium = new THREE.LineSegments(
-      edges,
-      new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 1 })
-    );
-    outlineMedium.scale.set(1.008, 1.008, 1.008);
-    cube.add(outlineMedium);
-
-    const outlineThick = new THREE.LineSegments(
-      edges,
-      new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 1 })
-    );
-    outlineThick.scale.set(1.016, 1.016, 1.016);
-    cube.add(outlineThick);
-
-    const outlines = {
-      thin: outlineThin,
-      medium: outlineMedium,
-      thick: outlineThick
-    };
-
-    function setOutlineMode(mode) {
-      outlineThin.visible = false;
-      outlineMedium.visible = false;
-      outlineThick.visible = false;
-      outlines[mode].visible = true;
+    function createMaterial(color, opacity, flatShading) {
+      return new THREE.MeshStandardMaterial({
+        color,
+        flatShading,
+        transparent: true,
+        opacity
+      });
     }
 
-    setOutlineMode("thin");
+    let geometry = createGeometry(currentShape);
+    let shapeMaterial = createMaterial(0x4da6ff, 1, true);
+    const shape = new THREE.Mesh(geometry, shapeMaterial);
+    scene.add(shape);
+
+    const outline = new THREE.LineSegments(
+      new THREE.EdgesGeometry(geometry),
+      new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 1 })
+    );
+    shape.add(outline);
+
+    const outlineScales = { thin: 1.004, medium: 1.012, thick: 1.022 };
+
+    function setOutlineMode(mode) {
+      const s = outlineScales[mode] || outlineScales.thin;
+      outline.scale.set(s, s, s);
+    }
 
     const light1 = new THREE.DirectionalLight(0xffffff, 1);
     light1.position.set(3, 3, 3);
     scene.add(light1);
 
-    const light2 = new THREE.AmbientLight(0xffffff, 0.6);
+    const light2 = new THREE.AmbientLight(0xffffff, 0.55);
     scene.add(light2);
 
     const grid = new THREE.GridHelper(10, 10);
@@ -383,155 +480,265 @@
     controls.target.copy(defaultTarget);
     controls.update();
 
-    const resetButton = document.getElementById("resetCamera");
-    const toggleGridButton = document.getElementById("toggleGrid");
-    const toggleGhostButton = document.getElementById("toggleGhost");
-    const colorButtons = document.querySelectorAll(".color-btn");
-    const outlineModeSelect = document.getElementById("outlineMode");
-    const lightModeSelect = document.getElementById("lightMode");
-    const shadingModeSelect = document.getElementById("shadingMode");
-    const languageSelect = document.getElementById("languageSelect");
-    const shapeModeSelect = document.getElementById("shapeMode");
-    const viewRandomButton = document.getElementById("viewRandom");
-
-    let ghostMode = false;
+    const els = {
+      languageSelect: document.getElementById("languageSelect"),
+      newExercise: document.getElementById("newExercise"),
+      challengeMode: document.getElementById("challengeMode"),
+      timerSelect: document.getElementById("timerSelect"),
+      startTimer: document.getElementById("startTimer"),
+      resetTimer: document.getElementById("resetTimer"),
+      shapeMode: document.getElementById("shapeMode"),
+      randomShape: document.getElementById("randomShape"),
+      resetCamera: document.getElementById("resetCamera"),
+      viewRandom: document.getElementById("viewRandom"),
+      toggleGrid: document.getElementById("toggleGrid"),
+      toggleAxes: document.getElementById("toggleAxes"),
+      toggleGhost: document.getElementById("toggleGhost"),
+      randomLight: document.getElementById("randomLight"),
+      outlineMode: document.getElementById("outlineMode"),
+      lightMode: document.getElementById("lightMode"),
+      shadingMode: document.getElementById("shadingMode"),
+      timerDisplay: document.getElementById("timerDisplay"),
+      taskName: document.getElementById("taskName"),
+      taskHint: document.getElementById("taskHint")
+    };
 
     const defaultPresets = {
-      1: {
-        position: { x: 2, y: 2, z: 3 },
-        target:   { x: 0, y: 0, z: 0 }
-      },
-      2: {
-        position: { x: 0, y: 5, z: 0.01 },
-        target:   { x: 0, y: 0, z: 0 }
-      },
-      3: {
-        position: { x: 5, y: 0, z: 0.01 },
-        target:   { x: 0, y: 0, z: 0 }
-      }
+      1: { position: { x: 2, y: 2, z: 3 }, target: { x: 0, y: 0, z: 0 } },
+      2: { position: { x: 0, y: 5, z: 0.01 }, target: { x: 0, y: 0, z: 0 } },
+      3: { position: { x: 5, y: 0, z: 0.01 }, target: { x: 0, y: 0, z: 0 } },
+      4: { position: { x: 0.01, y: 0, z: 5 }, target: { x: 0, y: 0, z: 0 } }
     };
+
+    function formatTime(seconds) {
+      const min = Math.floor(seconds / 60).toString().padStart(2, "0");
+      const sec = (seconds % 60).toString().padStart(2, "0");
+      return `${min}:${sec}`;
+    }
+
+    function updateTimerDisplay() {
+      els.timerDisplay.textContent = formatTime(remainingSeconds);
+    }
+
+    function setShape(type) {
+      currentShape = type;
+      const newGeometry = createGeometry(type);
+
+      shape.geometry.dispose();
+      shape.geometry = newGeometry;
+
+      outline.geometry.dispose();
+      outline.geometry = new THREE.EdgesGeometry(newGeometry);
+
+      els.shapeMode.value = type;
+      els.taskName.textContent = translations[currentLanguage].shapes[type];
+    }
+
+    function randomItem(array) {
+      return array[Math.floor(Math.random() * array.length)];
+    }
+
+    function setRandomShape() {
+      const shapes = Object.keys(translations.en.shapes);
+      setShape(randomItem(shapes));
+    }
+
+    function setRandomAngle() {
+      const radius = 4.12;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos((Math.random() * 2) - 1);
+      const x = radius * Math.sin(phi) * Math.sin(theta);
+      const y = radius * Math.cos(phi);
+      const z = radius * Math.sin(phi) * Math.cos(theta);
+      camera.position.set(x, y, z);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
+
+    function setRandomLight() {
+      const radius = 4;
+      const x = (Math.random() * 2 - 1) * radius;
+      const y = Math.random() * radius + 1;
+      const z = (Math.random() * 2 - 1) * radius;
+      light1.position.set(x, y, z);
+      light1.intensity = 0.8 + Math.random() * 1.6;
+      light2.intensity = 0.25 + Math.random() * 0.45;
+      els.lightMode.value = "normal";
+    }
+
+    function newExercise(autoStartTimer = false) {
+      setRandomShape();
+      setRandomAngle();
+      setRandomLight();
+      resetTimer(false);
+      els.taskHint.textContent = challengeMode
+        ? translations[currentLanguage].hintChallenge
+        : translations[currentLanguage].hintNormal;
+
+      if (autoStartTimer) startTimer();
+    }
+
+    function startTimer() {
+      if (timerRunning) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        els.startTimer.textContent = translations[currentLanguage].startTimer;
+        return;
+      }
+
+      timerRunning = true;
+      els.startTimer.textContent = translations[currentLanguage].pauseTimer;
+
+      timerInterval = setInterval(() => {
+        remainingSeconds--;
+        updateTimerDisplay();
+
+        if (remainingSeconds <= 0) {
+          clearInterval(timerInterval);
+          timerRunning = false;
+          els.startTimer.textContent = translations[currentLanguage].startTimer;
+
+          if (challengeMode) {
+            els.taskHint.textContent = translations[currentLanguage].timeUp;
+            newExercise(true);
+          }
+        }
+      }, 1000);
+    }
+
+    function resetTimer(updateText = true) {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      remainingSeconds = Number(els.timerSelect.value);
+      updateTimerDisplay();
+      if (updateText) els.taskHint.textContent = translations[currentLanguage].hintNormal;
+      els.startTimer.textContent = translations[currentLanguage].startTimer;
+    }
 
     function loadView(slot) {
       const data = defaultPresets[slot];
       if (!data) return;
-
-      camera.position.set(
-        data.position.x,
-        data.position.y,
-        data.position.z
-      );
-
-      controls.target.set(
-        data.target.x,
-        data.target.y,
-        data.target.z
-      );
-
-      controls.update();
-    }
-
-  
-    function setRandomAngle() {
-      const radius = 4.12; 
-      
-      
-      const theta = Math.random() * Math.PI * 2; 
-      const phi = Math.acos((Math.random() * 2) - 1); 
-
-      
-      const x = radius * Math.sin(phi) * Math.sin(theta);
-      const y = radius * Math.cos(phi);
-      const z = radius * Math.sin(phi) * Math.cos(theta);
-
-      camera.position.set(x, y, z);
-      controls.target.set(0, 0, 0);
+      camera.position.set(data.position.x, data.position.y, data.position.z);
+      controls.target.set(data.target.x, data.target.y, data.target.z);
       controls.update();
     }
 
     function updateLanguage(lang) {
       currentLanguage = lang;
       const t = translations[lang];
-
       document.documentElement.lang = lang;
 
       document.getElementById("langLabel").textContent = t.langLabel;
+      document.getElementById("exerciseLabel").textContent = t.exerciseLabel;
       document.getElementById("shapeLabel").textContent = t.shapeLabel;
       document.getElementById("viewLabel").textContent = t.viewLabel;
       document.getElementById("colorLabel").textContent = t.colorLabel;
       document.getElementById("appearanceLabel").textContent = t.appearanceLabel;
       document.getElementById("presetsLabel").textContent = t.presetsLabel;
 
-      resetButton.textContent = t.resetCamera;
-      toggleGridButton.textContent = grid.visible ? t.hideGrid : t.showGrid;
-      toggleGhostButton.textContent = ghostMode ? t.ghostOn : t.ghostOff;
+      els.newExercise.textContent = t.newExercise;
+      els.challengeMode.textContent = challengeMode ? t.challengeOn : t.challengeOff;
+      els.startTimer.textContent = timerRunning ? t.pauseTimer : t.startTimer;
+      els.resetTimer.textContent = t.resetTimer;
+      els.randomShape.textContent = t.randomShape;
+      els.resetCamera.textContent = t.resetCamera;
+      els.viewRandom.textContent = t.randomAngle;
+      els.toggleGrid.textContent = grid.visible ? t.hideGrid : t.showGrid;
+      els.toggleAxes.textContent = axes.visible ? t.hideAxes : t.showAxes;
+      els.toggleGhost.textContent = ghostMode ? t.ghostOn : t.ghostOff;
+      els.randomLight.textContent = t.randomLight;
 
       document.getElementById("view1").textContent = "3/4";
       document.getElementById("view2").textContent = t.viewTop;
       document.getElementById("view3").textContent = t.viewSide;
-      viewRandomButton.textContent = t.viewRandom;
+      document.getElementById("view4").textContent = t.viewFront;
 
-      outlineModeSelect.options[0].text = t.outlineThin;
-      outlineModeSelect.options[1].text = t.outlineMedium;
-      outlineModeSelect.options[2].text = t.outlineThick;
+      els.outlineMode.options[0].text = t.outlineThin;
+      els.outlineMode.options[1].text = t.outlineMedium;
+      els.outlineMode.options[2].text = t.outlineThick;
 
-      lightModeSelect.options[0].text = t.lightNormal;
-      lightModeSelect.options[1].text = t.lightStrong;
-      lightModeSelect.options[2].text = t.lightNone;
+      els.lightMode.options[0].text = t.lightNormal;
+      els.lightMode.options[1].text = t.lightStrong;
+      els.lightMode.options[2].text = t.lightNone;
 
-      shadingModeSelect.options[0].text = t.shadingFlat;
-      shadingModeSelect.options[1].text = t.shadingSmooth;
+      els.shadingMode.options[0].text = t.shadingFlat;
+      els.shadingMode.options[1].text = t.shadingSmooth;
 
-      shapeModeSelect.options[0].text = t.shapeCube;
-      shapeModeSelect.options[1].text = t.shapeSphere;
-      shapeModeSelect.options[2].text = t.shapeCone;
-      shapeModeSelect.options[3].text = t.shapeCylinder;
-      shapeModeSelect.options[4].text = t.shapeTorus;
-      shapeModeSelect.options[5].text = t.shapePyramid;
+      els.timerSelect.options[0].text = t.timer30;
+      els.timerSelect.options[1].text = t.timer60;
+      els.timerSelect.options[2].text = t.timer120;
+      els.timerSelect.options[3].text = t.timer300;
+
+      Array.from(els.shapeMode.options).forEach(option => {
+        option.text = t.shapes[option.value];
+      });
+
+      els.taskName.textContent = t.shapes[currentShape];
+      els.taskHint.textContent = challengeMode ? t.hintChallenge : t.hintNormal;
     }
 
-    resetButton.addEventListener("click", () => {
+    els.languageSelect.addEventListener("change", (e) => updateLanguage(e.target.value));
+    els.newExercise.addEventListener("click", () => newExercise(false));
+    els.challengeMode.addEventListener("click", () => {
+      challengeMode = !challengeMode;
+      updateLanguage(currentLanguage);
+      if (challengeMode) newExercise(true);
+      else resetTimer();
+    });
+
+    els.timerSelect.addEventListener("change", () => resetTimer());
+    els.startTimer.addEventListener("click", startTimer);
+    els.resetTimer.addEventListener("click", () => resetTimer());
+    els.shapeMode.addEventListener("change", (e) => setShape(e.target.value));
+    els.randomShape.addEventListener("click", setRandomShape);
+
+    els.resetCamera.addEventListener("click", () => {
       camera.position.copy(defaultCameraPosition);
       controls.target.copy(defaultTarget);
       controls.update();
     });
 
-    toggleGridButton.addEventListener("click", () => {
+    els.viewRandom.addEventListener("click", setRandomAngle);
+
+    els.toggleGrid.addEventListener("click", () => {
       grid.visible = !grid.visible;
-      toggleGridButton.textContent = grid.visible
+      els.toggleGrid.textContent = grid.visible
         ? translations[currentLanguage].hideGrid
         : translations[currentLanguage].showGrid;
     });
 
-    toggleGhostButton.addEventListener("click", () => {
+    els.toggleAxes.addEventListener("click", () => {
+      axes.visible = !axes.visible;
+      els.toggleAxes.textContent = axes.visible
+        ? translations[currentLanguage].hideAxes
+        : translations[currentLanguage].showAxes;
+    });
+
+    els.toggleGhost.addEventListener("click", () => {
       ghostMode = !ghostMode;
-      cube.material.opacity = ghostMode ? 0.35 : 1.0;
-
-      Object.values(outlines).forEach(outline => {
-        outline.material.opacity = ghostMode ? 0.8 : 1.0;
-      });
-
-      toggleGhostButton.textContent = ghostMode
+      shape.material.opacity = ghostMode ? 0.35 : 1.0;
+      outline.material.opacity = ghostMode ? 0.8 : 1.0;
+      els.toggleGhost.textContent = ghostMode
         ? translations[currentLanguage].ghostOn
         : translations[currentLanguage].ghostOff;
     });
 
-    colorButtons.forEach(button => {
+    els.randomLight.addEventListener("click", setRandomLight);
+
+    document.querySelectorAll(".color-btn").forEach(button => {
       button.addEventListener("click", () => {
         const colorValue = Number(button.dataset.color);
-        cube.material.color.setHex(colorValue);
+        shape.material.color.setHex(colorValue);
       });
     });
 
-    outlineModeSelect.addEventListener("change", (e) => {
-      setOutlineMode(e.target.value);
-    });
+    els.outlineMode.addEventListener("change", (e) => setOutlineMode(e.target.value));
 
-    lightModeSelect.addEventListener("change", (e) => {
+    els.lightMode.addEventListener("change", (e) => {
       const mode = e.target.value;
-
       if (mode === "normal") {
         light1.intensity = 1;
-        light2.intensity = 0.6;
+        light2.intensity = 0.55;
       } else if (mode === "strong") {
         light1.intensity = 2.2;
         light2.intensity = 1.0;
@@ -541,56 +748,22 @@
       }
     });
 
-    shadingModeSelect.addEventListener("change", (e) => {
-      const currentColor = cube.material.color.getHex();
-      const currentOpacity = cube.material.opacity;
-
-      if (e.target.value === "flat") {
-        cube.material.dispose();
-        cube.material = new THREE.MeshStandardMaterial({
-          color: currentColor,
-          flatShading: true,
-          transparent: true,
-          opacity: currentOpacity
-        });
-      } else {
-        cube.material.dispose();
-        cube.material = new THREE.MeshStandardMaterial({
-          color: currentColor,
-          flatShading: false,
-          transparent: true,
-          opacity: currentOpacity
-        });
-      }
-    });
-
-    shapeModeSelect.addEventListener("change", (e) => {
-      const selectedShape = e.target.value;
-      const newGeometry = createGeometry(selectedShape);
-
-      cube.geometry.dispose();
-      cube.geometry = newGeometry;
-
-      
-      Object.values(outlines).forEach(outline => {
-        outline.geometry.dispose();
-        outline.geometry = new THREE.EdgesGeometry(newGeometry);
-      });
-
-      geometry = newGeometry;
-    });
-
-    languageSelect.addEventListener("change", (e) => {
-      updateLanguage(e.target.value);
+    els.shadingMode.addEventListener("change", (e) => {
+      const currentColor = shape.material.color.getHex();
+      const currentOpacity = shape.material.opacity;
+      const flat = e.target.value === "flat";
+      shape.material.dispose();
+      shape.material = createMaterial(currentColor, currentOpacity, flat);
     });
 
     document.getElementById("view1").addEventListener("click", () => loadView(1));
     document.getElementById("view2").addEventListener("click", () => loadView(2));
     document.getElementById("view3").addEventListener("click", () => loadView(3));
-    viewRandomButton.addEventListener("click", setRandomAngle);
+    document.getElementById("view4").addEventListener("click", () => loadView(4));
 
-    languageSelect.value = "en";
     updateLanguage("en");
+    updateTimerDisplay();
+    setOutlineMode("thin");
 
     function animate() {
       requestAnimationFrame(animate);
@@ -604,6 +777,7 @@
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     });
   </script>
 </body>
