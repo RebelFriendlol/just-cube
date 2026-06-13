@@ -410,6 +410,7 @@
     scene.background = new THREE.Color(0x1e1e1e);
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    
     const defaultCameraPosition = new THREE.Vector3(2, 2, 3);
     const defaultTarget = new THREE.Vector3(0, 0, 0);
     camera.position.copy(defaultCameraPosition);
@@ -419,6 +420,7 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     document.body.appendChild(renderer.domElement);
 
+    // Bazowa funkcja tworzenia geometrii (używana tylko raz do zbudowania cache)
     function createGeometry(type) {
       switch (type) {
         case "cube": return new THREE.BoxGeometry(1, 1, 1);
@@ -435,6 +437,15 @@
       }
     }
 
+    const shapeKeys = Object.keys(translations.en.shapes);
+    const geometryCache = {};
+    const outlineCache = {};
+
+    shapeKeys.forEach(key => {
+      geometryCache[key] = createGeometry(key);
+      outlineCache[key] = new THREE.EdgesGeometry(geometryCache[key]);
+    });
+
     function createMaterial(color, opacity, flatShading) {
       return new THREE.MeshStandardMaterial({
         color,
@@ -444,13 +455,12 @@
       });
     }
 
-    let geometry = createGeometry(currentShape);
     let shapeMaterial = createMaterial(0x4da6ff, 1, true);
-    const shape = new THREE.Mesh(geometry, shapeMaterial);
+    const shape = new THREE.Mesh(geometryCache[currentShape], shapeMaterial);
     scene.add(shape);
 
     const outline = new THREE.LineSegments(
-      new THREE.EdgesGeometry(geometry),
+      outlineCache[currentShape],
       new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 1 })
     );
     shape.add(outline);
@@ -520,15 +530,13 @@
       els.timerDisplay.textContent = formatTime(remainingSeconds);
     }
 
+    // Zoptymalizowana zmiana kształtu – brak alokacji nowych geometrii i brak wycieków pamięci
     function setShape(type) {
       currentShape = type;
-      const newGeometry = createGeometry(type);
 
-      shape.geometry.dispose();
-      shape.geometry = newGeometry;
-
-      outline.geometry.dispose();
-      outline.geometry = new THREE.EdgesGeometry(newGeometry);
+      // Podmiana referencji na geometrie z cache (stare nie są niszczone, bo zostają w pamięci podręcznej)
+      shape.geometry = geometryCache[type];
+      outline.geometry = outlineCache[type];
 
       els.shapeMode.value = type;
       els.taskName.textContent = translations[currentLanguage].shapes[type];
@@ -539,8 +547,7 @@
     }
 
     function setRandomShape() {
-      const shapes = Object.keys(translations.en.shapes);
-      setShape(randomItem(shapes));
+      setShape(randomItem(shapeKeys));
     }
 
     function setRandomAngle() {
@@ -748,12 +755,15 @@
       }
     });
 
+   
     els.shadingMode.addEventListener("change", (e) => {
       const currentColor = shape.material.color.getHex();
       const currentOpacity = shape.material.opacity;
       const flat = e.target.value === "flat";
-      shape.material.dispose();
+      
+      const oldMaterial = shape.material;
       shape.material = createMaterial(currentColor, currentOpacity, flat);
+      oldMaterial.dispose(); // zwalnianie zasobów z GPU
     });
 
     document.getElementById("view1").addEventListener("click", () => loadView(1));
