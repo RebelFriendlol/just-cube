@@ -11,3 +11,6 @@ This project is meant as a simple reference tool for:
 - perspective studies
 - form rotation
 - basic construction drawing
+- time mode
+
+(everything is in one file for user convenience so that everyone can run it on their browser)
